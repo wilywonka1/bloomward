@@ -1,5 +1,11 @@
 // BLOOMWARD — hand-in program for the best-game-01 bounty.
 //
+// BLOOMWARD: defend the Crystal Garden — five living towers (Sunbloom,
+// Frostbell, Thornvine, Bombard Melon, Stormspire), fourteen waves of
+// garden pests, two bosses (the Bramble Boar and the Queen Hornet), a
+// gold economy that pays interest on what you bank, and one Great Bloom
+// to keep alive.
+//
 // The game itself is the static site in game/ beside this file: one HTML
 // page and a set of ES modules, no build step, nothing fetched from the
 // network. This program's only job is delivery — copy game/ and
@@ -44,4 +50,6 @@ const dossier = buildDossier(outDir, {
 });
 writeFileSync(join(outDir, 'dossier.json'), dossier);
 
+// One-line receipt for the run log: the garden, its screenshots and the
+// dossier were all written by this run, to this directory.
 console.log(`BLOOMWARD delivered to ${outDir}: game/, screenshots/ and dossier.json are ready.`);
