@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BLOOMWARD — Defend the Crystal Garden</title>
+<style>
+  :root {
+    --ink: #22331a;
+    --paper: #fff8e6;
+    --green: #3f9e4d;
+    --green-deep: #2f7a3a;
+    --gold: #f5a623;
+    --red: #e63946;
+    --card: #ffffff;
+    --line: #d9c98f;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: linear-gradient(180deg, #aee7ff 0%, #d8f7c3 78%, #b9ec9d 100%);
+    font-family: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
+    color: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  #stage {
+    position: relative;
+    width: min(100vw, 160vh);
+    aspect-ratio: 1280 / 800;
+    max-height: 100vh;
+    background: var(--paper);
+    box-shadow: 0 18px 60px rgba(31, 68, 20, 0.45);
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+
+  /* ---------- top bar ---------- */
+  #topbar {
+    height: 64px; flex: 0 0 64px;
+    display: flex; align-items: center; gap: 18px;
+    padding: 0 16px;
+    background: linear-gradient(180deg, #fffdf4, #ffedb8);
+    border-bottom: 3px solid var(--line);
+  }
+  .logo { font-size: 25px; font-weight: 900; letter-spacing: 2px; color: var(--green-deep); }
+  .logo span { color: var(--gold); }
+  .stat { font-size: 16.5px; font-weight: 700; white-space: nowrap; }
+  .stat b { font-size: 19px; }
+  .stat.gold b { color: #d98a06; }
+  .stat.lives b { color: var(--red); }
+  .spacer { flex: 1; }
+  .bar-btn {
+    font-family: inherit; font-weight: 800; font-size: 15px; cursor: pointer;
+    border: 2px solid var(--green-deep); border-radius: 10px;
+    background: #eaffdf; color: var(--green-deep); padding: 8px 13px;
+  }
+  .bar-btn:hover { filter: brightness(1.05); }
+  #btn-wave {
+    background: linear-gradient(180deg, #ffb340, #f08c1a); border-color: #b45f06; color: #fff;
+    font-size: 16.5px; padding: 9px 18px; text-shadow: 0 1px 2px rgba(120,60,0,0.5);
+  }
+  #btn-wave:disabled { filter: grayscale(0.5) brightness(1.08); cursor: default; }
+
+  /* ---------- play row ---------- */
+  #playrow { flex: 1; display: flex; min-height: 0; }
+  #canvas-wrap { position: relative; flex: 1 1 auto; }
+  canvas { display: block; width: 100%; height: auto; aspect-ratio: 1024 / 640; background: #8fd45e; }
+
+  /* ---------- sidebar ---------- */
+  #sidebar {
+    width: 256px; flex: 0 0 256px;
+    background: linear-gradient(180deg, #fffdf4, #fdf3d0);
+    border-left: 3px solid var(--line);
+    padding: 12px 12px 10px;
+    display: flex; flex-direction: column; gap: 10px;
+    overflow: hidden;
+  }
+  .side-title { font-size: 15px; font-weight: 900; letter-spacing: 1.6px; color: var(--green-deep); }
+  #shop { display: flex; flex-direction: column; gap: 7px; }
+  .shop-card {
+    font-family: inherit; text-align: left; cursor: pointer;
+    background: var(--card); border: 2px solid #cfd8b8; border-radius: 11px;
+    padding: 7px 10px 7px 12px; position: relative;
+    display: grid; grid-template-columns: auto 1fr auto; column-gap: 8px; align-items: center;
+  }
+  .shop-card:hover { border-color: var(--green); }
+  .shop-card.placing { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(245,166,35,0.4); }
+  .shop-card.cant-afford { opacity: 0.55; }
+  .shop-key {
+    position: absolute; top: -7px; left: -6px; width: 18px; height: 18px;
+    background: var(--green-deep); color: #fff; border-radius: 50%;
+    font-size: 12px; font-weight: 900; display: flex; align-items: center; justify-content: center;
+  }
+  .shop-dot { width: 17px; height: 17px; border-radius: 50%; border: 2px solid rgba(0,0,0,0.25); grid-row: span 2; }
+  .shop-name { font-size: 15.5px; font-weight: 800; }
+  .shop-cost { font-size: 15px; font-weight: 900; color: #d98a06; }
+  .shop-desc { grid-column: 2 / 4; font-size: 11.8px; color: #5a6b4c; line-height: 1.3; }
+  #panel {
+    background: var(--card); border: 2px solid #cfd8b8; border-radius: 11px; padding: 10px 12px;
+    min-height: 128px;
+  }
+  #panel-empty { font-size: 13px; color: #5a6b4c; line-height: 1.45; }
+  #panel-name { font-size: 16.5px; font-weight: 900; color: var(--green-deep); margin-bottom: 4px; }
+  #panel-stats { font-size: 13px; line-height: 1.5; margin-bottom: 8px; }
+  .panel-btns { display: flex; gap: 7px; }
+  .panel-btns button {
+    flex: 1; font-family: inherit; font-weight: 800; font-size: 13.5px; cursor: pointer;
+    border-radius: 9px; padding: 8px 4px; border: 2px solid var(--green-deep);
+    background: #eaffdf; color: var(--green-deep);
+  }
+  #btn-sell { border-color: #b3541e; background: #ffefe4; color: #b3541e; }
+  .panel-btns button:disabled { opacity: 0.5; cursor: default; }
+  #tips { font-size: 12px; color: #5a6b4c; line-height: 1.5; }
+
+  /* ---------- banner + message ---------- */
+  #banner {
+    position: absolute; top: 17%; left: 0; width: 100%; text-align: center;
+    opacity: 0; transform: translateY(10px); transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none;
+  }
+  #banner.visible { opacity: 1; transform: translateY(0); }
+  #banner-title {
+    font-size: 46px; font-weight: 900; letter-spacing: 3px; color: #fff;
+    text-shadow: 0 3px 0 #2f7a3a, 0 6px 18px rgba(20,60,10,0.55);
+  }
+  #banner-sub { font-size: 19px; font-weight: 700; color: #fffbe8; text-shadow: 0 2px 6px rgba(20,60,10,0.7); margin-top: 4px; }
+  #msg {
+    position: absolute; bottom: 12px; left: 0; width: 100%; text-align: center;
+    font-size: 17px; font-weight: 800; color: #fff;
+    text-shadow: 0 2px 5px rgba(20,60,10,0.8);
+    opacity: 0; transition: opacity 0.25s; pointer-events: none;
+  }
+  #msg.visible { opacity: 1; }
+
+  /* ---------- screens ---------- */
+  .screen {
+    position: absolute; inset: 0; display: none; z-index: 5;
+    flex-direction: column; align-items: center; justify-content: center; text-align: center;
+    padding: 30px 70px;
+    background: radial-gradient(ellipse at center, rgba(255,250,230,0.55) 0%, rgba(240,255,225,0.88) 80%);
+  }
+  .screen.visible { display: flex; }
+  .game-title { font-size: 96px; font-weight: 900; letter-spacing: 10px; color: var(--green-deep); line-height: 1; text-shadow: 0 4px 0 #ffd76f, 0 8px 22px rgba(47,122,58,0.4); }
+  .game-title span { color: var(--gold); }
+  .tagline { font-size: 24px; font-weight: 700; color: #476b35; margin-top: 10px; }
+  .goal { font-size: 16.5px; max-width: 780px; margin-top: 12px; line-height: 1.5; color: #3c5230; }
+  #title-roster {
+    margin-top: 16px; background: rgba(255,255,255,0.9); border: 2px solid var(--line); border-radius: 13px;
+    padding: 10px 20px; text-align: left; min-width: 620px;
+  }
+  .roster-row { display: flex; align-items: center; gap: 9px; font-size: 14.5px; padding: 2.5px 0; }
+  .roster-row b { min-width: 128px; }
+  .roster-row span:nth-child(3) { font-weight: 900; color: #d98a06; min-width: 52px; }
+  .roster-row em { color: #5a6b4c; font-style: normal; font-size: 13px; }
+  .howto { margin-top: 12px; font-size: 14.5px; color: #476b35; line-height: 1.55; }
+  .howto b { color: var(--green-deep); }
+  .big-btn {
+    margin-top: 20px; font-family: inherit; cursor: pointer;
+    font-size: 24px; font-weight: 900; letter-spacing: 3px; color: #fff;
+    background: linear-gradient(180deg, #ffb340, #f08c1a);
+    border: 3px solid #b45f06; border-radius: 14px; padding: 14px 44px;
+    box-shadow: 0 8px 24px rgba(240,140,26,0.5); text-shadow: 0 1px 2px rgba(120,60,0,0.5);
+  }
+  .big-btn:hover { filter: brightness(1.07); }
+  #title-best { margin-top: 14px; font-size: 14px; font-weight: 700; color: #7a6a35; }
+  .end-title { font-size: 62px; font-weight: 900; letter-spacing: 5px; color: var(--green-deep); text-shadow: 0 3px 0 #ffd76f; }
+  .end-title.fallen { color: var(--red); text-shadow: 0 3px 0 #5c1a20; }
+  .end-sub { font-size: 19px; color: #476b35; margin-top: 8px; font-weight: 600; }
+  #vic-grade { font-size: 92px; font-weight: 900; color: var(--gold); line-height: 1.1; text-shadow: 0 4px 0 #b45f06, 0 8px 20px rgba(180,95,6,0.4); }
+  .end-stats { font-size: 18px; line-height: 1.6; color: #3c5230; margin-top: 6px; }
+  .end-stats b { color: var(--green-deep); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="topbar">
+    <div class="logo">BLOOM<span>WARD</span></div>
+    <div class="stat gold">◆ Gold <b id="hud-gold">220</b></div>
+    <div class="stat lives">♥ Lives <b id="hud-lives">20</b></div>
+    <div class="stat">🌊 Wave <b id="hud-wave">0 / 14</b></div>
+    <div class="stat">⭐ Score <b id="hud-score">0</b></div>
+    <div class="stat">🐛 Pests <b id="hud-left">0</b></div>
+    <div class="spacer"></div>
+    <button class="bar-btn" id="btn-speed">▶ 1×</button>
+    <button class="bar-btn" id="btn-pause">⏸ PAUSE</button>
+    <button class="bar-btn" id="btn-mute">🔊</button>
+    <button class="bar-btn" id="btn-wave">▶ START WAVE 1</button>
+  </div>
+
+  <div id="playrow">
+    <div id="canvas-wrap">
+      <canvas id="game" width="1024" height="640"></canvas>
+      <div id="banner"><div id="banner-title"></div><div id="banner-sub"></div></div>
+      <div id="msg"></div>
+    </div>
+    <div id="sidebar">
+      <div class="side-title">🌱 PLANT A TOWER</div>
+      <div id="shop"></div>
+      <div class="side-title">🔍 TOWER</div>
+      <div id="panel">
+        <div id="panel-empty">Click a planted tower to inspect it.<br><br>Upgrades make it bigger and stronger — three levels each. Selling refunds 70% of everything you spent on it.</div>
+        <div id="panel-body" style="display:none">
+          <div id="panel-name"></div>
+          <div id="panel-stats"></div>
+          <div class="panel-btns">
+            <button id="btn-upgrade">⬆ UPGRADE</button>
+            <button id="btn-sell">SELL</button>
+          </div>
+        </div>
+      </div>
+      <div id="tips">
+        <b>Tips:</b> Frostbells before corners, Bombards where the path doubles back.
+        Wave-clear pays a bonus plus <b>8% interest</b> on banked gold (max ◆40) — sometimes saving is a strategy.
+        Bosses that leak cost <b>5 lives</b>.
+      </div>
+    </div>
+  </div>
+
+  <div class="screen visible" id="screen-title">
+    <div class="game-title">BLOOM<span>WARD</span></div>
+    <div class="tagline">Plant the garden. Stop the swarm. Save the Great Bloom.</div>
+    <div class="goal">Pests pour from the burrow and march the stone path toward the Crystal Garden's Great Bloom. Plant living towers on the grass, upgrade them as the siege deepens, and hold all <b>14 waves</b> — including the Bramble Boar and the Queen Hornet herself.</div>
+    <div id="title-roster"></div>
+    <div class="howto"><b>Click a tower card</b> (or press 1–5), then click a grass tile to plant. <b>Click a tower</b> to upgrade or sell it. <b>Space</b> starts the wave · <b>P</b> pause · <b>F</b> speed · <b>M</b> mute.</div>
+    <button class="big-btn" id="btn-start">🌼 START DEFENDING</button>
+    <div id="title-best"></div>
+  </div>
+
+  <div class="screen" id="screen-victory">
+    <div class="end-title">🌸 THE GARDEN BLOOMS 🌸</div>
+    <div class="end-sub">The Queen is beaten, the path is quiet, and the Great Bloom opens at last.</div>
+    <div id="vic-grade">S</div>
+    <div class="end-stats" id="vic-stats"></div>
+    <button class="big-btn" id="btn-again">↻ PLAY AGAIN</button>
+  </div>
+
+  <div class="screen" id="screen-gameover">
+    <div class="end-title fallen">🥀 THE BLOOM HAS FALLEN</div>
+    <div class="end-sub">The swarm reached the Great Bloom and nibbled it bare.</div>
+    <div class="end-stats" id="over-stats" style="margin-top:16px"></div>
+    <button class="big-btn" id="btn-retry">↻ TRY AGAIN</button>
+  </div>
+</div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
